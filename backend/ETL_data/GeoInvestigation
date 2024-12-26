@@ -1,0 +1,15 @@
+import json
+import pandas as pd
+import geopandas as gpd
+
+# Ladda JSON-data
+with open('ETL_data/Oceanus Geography Nodes.json', 'r') as file:
+    oceanus_data = json.load(file)
+
+# Extrahera nodinformation
+nodes = pd.DataFrame(oceanus_data['nodes'])
+print(nodes.head())
+
+# Ladda GeoJSON-data
+geo_data = gpd.read_file('ETL_data/Oceanus Geography.geojson')
+print(geo_data.head())

@@ -1,0 +1,131 @@
+
+ /*@Author: Asta Omarsdottir 
+ * @Email: asta.omarsdottir@gmail.com
+ * @Date: 2024-10-14
+ * @Last Modified by: Someone
+ * @Last Modified time: 2024-12-25 11:37:47
+ * @Description: assets/style.css */
+ 
+body {
+    background-color: #f8f9fa;
+}
+
+#dashboard_heading {
+    color: #91c0f2;
+    font-size: 24px;
+    text-align: center;
+}
+
+.dropdown-style {
+    width: 50%;
+    margin: 0 auto;
+    display: block;
+}
+
+/* Header styling */
+.header {
+    background-color: #d6eaf8;
+    color: black;
+    font-size: 12px;
+    text-align: left;
+    padding-left: 20px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-right: 20px;
+}
+
+/* Content container */
+.content {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+    gap: 10px;
+}
+
+/* Main content grid */
+.main-content {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 90%;
+    background-color: #e0f7fa; /* Ljusblå */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.graph-container-1 .graph-container-2 .graph-container-3 .graph-container-4 .graph-container-5 .graph-container-6 .graph-box{
+    display: flex;
+    flex-direction: column;
+    flex-grow: "1";
+}
+
+/* Filter container */
+.filter-container {
+    width: 10%; /* 10% of site */
+    display: flex;
+    flex-direction: column;
+    background-color: #fdedec;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    align-self: flex-start;
+}
+
+/* Dropdown styling */
+.filter-container .dash-dropdown {
+    width: 100%; /* Takes up the full width of the filter container */
+    border-radius: 5px;
+    font-size: 12px;
+    padding: 1px;
+}
+
+.DateInput_input {
+    font-size: 12px;
+}
+
+.DateRangePickerInput_arrow_svg {
+    height: 12px;
+    Width: 12px;
+}
+
+/* Graph boxes */
+.graph-box {
+    display: block;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    height: 100vh;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 2px;
+    background-color: #ffffff;
+    font-size: 8px;
+
+}
+
+.graph-box > .dash-graph {
+    display:block;
+    width: 100%; /* Stretch the graph to the width of the box */
+    height: auto; /* Allow the height to adjust dynamically */
+}
+
+.graph-title {
+    position: relative;          
+    top: 4px;                   
+    left: 10px;                
+    margin: 0;
+    font-size: 16px;             
+    color: #333;                
+    z-index: 10;                 /* Ensure the title is positioned above the graph */
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 10px;
+    background-color: #d6eaf8;
+    color: black;
+    border-top: 2px solid #ccc;
+}
+
