@@ -1,11 +1,10 @@
-
- /*@Author: Asta Omarsdottir 
+/*@Author: Asta Omarsdottir 
  * @Email: asta.omarsdottir@gmail.com
  * @Date: 2024-10-14
- * @Last Modified by: Someone
- * @Last Modified time: 2024-12-25 11:37:47
+ * @Last Modified by: Asta Omarsdottir
+ * @Last Modified time: 2025-01-05
  * @Description: assets/style.css */
- 
+
 body {
     background-color: #f8f9fa;
 }
@@ -48,13 +47,14 @@ body {
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
     width: 90%;
-    background-color: #e0f7fa; /* Ljusblå */
+    background-color: #e0f7fa;
+    /* light blue */
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
 }
 
-.graph-container-1 .graph-container-2 .graph-container-3 .graph-container-4 .graph-container-5 .graph-container-6 .graph-box{
+.graph-container-1 .graph-container-2 .graph-container-3 .graph-container-4 .graph-container-5 .graph-container-6 .graph-box {
     display: flex;
     flex-direction: column;
     flex-grow: "1";
@@ -62,11 +62,12 @@ body {
 
 /* Filter container */
 .filter-container {
-    width: 10%; /* 10% of site */
+    width: 12%;
+    /* 10% of site */
     display: flex;
     flex-direction: column;
     background-color: #fdedec;
-    padding: 5px;
+    padding: 2px;
     border: 1px solid #ccc;
     border-radius: 5px;
     align-self: flex-start;
@@ -74,20 +75,58 @@ body {
 
 /* Dropdown styling */
 .filter-container .dash-dropdown {
-    width: 100%; /* Takes up the full width of the filter container */
+    width: 100%;
+    /* Takes up the full width of the filter container */
     border-radius: 5px;
     font-size: 12px;
     padding: 1px;
 }
+    
+/* Ensure the container has sufficient width */
+.date-picker-container {
+    width:100%;
+    max-width: 100%;
+    padding: 1px;
+    box-sizing: border-box;
+}
 
-.DateInput_input {
+#date-picker {
+    width: 100% !important;  /* Ensures it takes full width of the container */
+    max-width: 100% !important; /* Prevents overflow */
+    box-sizing: border-box;  /* Ensures padding doesn’t increase width */
+}
+
+.date-picker-container {
+    width: 100%;
+    max-width: 100%;
+}
+
+.date-picker-container input {
+    width: 100%;
+}
+
+/* line height and font size for date input fields Start date, End date */
+#date-picker Input {
+    line-height: 14px;
     font-size: 12px;
 }
 
 .DateRangePickerInput_arrow_svg {
-    height: 12px;
-    Width: 12px;
+    width: 12px;
+    height:12px;
+    display: none;
+} 
+
+.DateRangePickerInput_clearDates_svg {
+    width: 8px;
+    height:8px;
+    vertical-align: middle;
 }
+
+#output-container {
+    font-size: 12px;
+    margin-left: 2px;
+} 
 
 /* Graph boxes */
 .graph-box {
@@ -101,23 +140,25 @@ body {
     padding: 2px;
     background-color: #ffffff;
     font-size: 8px;
-
 }
 
-.graph-box > .dash-graph {
-    display:block;
-    width: 100%; /* Stretch the graph to the width of the box */
-    height: auto; /* Allow the height to adjust dynamically */
+.graph-box>.dash-graph {
+    display: block;
+    width: 100%;
+    /* Stretch the graph to the width of the box */
+    height: auto;
+    /* Allow the height to adjust dynamically */
 }
 
 .graph-title {
-    position: relative;          
-    top: 4px;                   
-    left: 10px;                
+    position: relative;
+    top: 4px;
+    left: 10px;
     margin: 0;
-    font-size: 16px;             
-    color: #333;                
-    z-index: 10;                 /* Ensure the title is positioned above the graph */
+    font-size: 16px;
+    color: #333;
+    z-index: 10;
+    /* Ensure the title is positioned above the graph */
 }
 
 /* Footer */
@@ -128,4 +169,3 @@ body {
     color: black;
     border-top: 2px solid #ccc;
 }
-

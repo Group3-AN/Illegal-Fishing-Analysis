@@ -1,10 +1,8 @@
+from pyvis.network import Network
 import networkx as nx
 import pandas as pd
 import plotly.express as px
-from statsmodels.tsa.seasonal import seasonal_decompose
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import IsolationForest
+import plotly.graph_objects as go
 
 # @Author: Asta Omarsdottir
 # @Email: asta.omarsdottir@gmail.com
@@ -13,157 +11,285 @@ from sklearn.ensemble import IsolationForest
 # @Last Modified time: 2024-12-03
 # @Description: Handles graph design
 
-
-# @Author: Nupur Mittal
-# @Email: nupurmittal5@gmail.com
-# @Date: 2024-11-08
-# @Last Modified by:   Asta Omarsdottir 
-# @Last Modified time: 2024-11-13
-# @Last Modified: Moved from Connection.py with minor changes
-# @Description: Query data from Neo4j for Networkx Node-Link Diagram, Fish Delivery Network 
-# Create NetworkX graph from DeliveryReport, Transaction events and Commodity fish
-
-def create_graph(delivery_data):
-    G = nx.Graph()
-    for record in delivery_data:
-        delivery_node = f"delivery_{record['delivery_date']}_{record['quantity_delivered']}"
-        fish_node = record['fish_type']
-        
-        # Add nodes
-        G.add_node(delivery_node, label=f"Delivery on {record['delivery_date']}", type='delivery')
-        G.add_node(fish_node, label=fish_node, type='fish')
-        
-        # Add edge
-        G.add_edge(delivery_node, fish_node, quantity=record['quantity_delivered'])
-    
-    return G
-
-# @Author: Nupur Mittal
-# @Email: nupurmittal5@gmail.com
-# @Date: 2024-11-08
-# @Last Modified by:   Asta Omarsdottir 
-# @Last Modified time: 2024-11-13
-# @Last Modified: Moved from Connection.py with minor changes
-# @Description: Convert NetworkX graph to Cytoscape elements for Networkx Node-Link Diagram, Fish Delivery Network 
-
-def nx_to_cytoscape_elements(G):
-    elements = []
-    
-    # Add nodes
-    for node, data in G.nodes(data=True):
-        elements.append({'data': {'id': node, 'label': data['label'], 'type': data['type']}})
-    
-    # Add edges
-    for source, target, data in G.edges(data=True):
-        elements.append({'data': {'source': source, 'target': target, 'label': f"{data['quantity']} tons"}})
-    
-    return elements
-
-# @Author: Nupur Mittal
-# @Email: nupurmittal5@gmail.com
-# @Date: 2024-11-08
-# @Last Modified by:   Asta Omarsdottir # minor changes, error handling and debugging
-# @Last Modified time: 2024-11-13
-# @Last Modified: Moved from dataframetable.py with minor changes 
-# @Description: Create decompose time series to analyse fish quantity and seasonal trends 
-
-def decompose_time_series(data):
-    data['date'] = pd.to_datetime(data['date'])
-    data.set_index('date', inplace=True)
-    data = data.resample('D').sum()
-    if len(data) < 30:
-        raise ValueError("Not enough data points for seasonal decomposition (minimum 30 days required).")
-    decomposition = seasonal_decompose(data['qty_tons'], model='additive', period=30)
-    return decomposition
-
-# @Author: Nupur Mittal
-# @Email: nupurmittal5@gmail.com
-# @Date: 2024-11-15
-# @Last Modified by:   Asta Omarsdottir 
-# @Last Modified time: 2024-11-13
-# @Modified: Moved from network.py with minor changes
-# @Description: Fetch data to analyse fish quantity and seasonal trends
-
-def detect_anomalies(dataframe):
-    # Add a numerical representation of dates for modeling
-    dataframe['date_numeric'] = dataframe['date'].map(pd.Timestamp.toordinal)
-
-    # Normalize data for better results with Isolation Forest
-    scaler = StandardScaler()
-    dataframe[['date_numeric', 'qty']] = scaler.fit_transform(dataframe[['date_numeric', 'qty']])
-
-    # Isolation Forest to identify anomalies
-    isolation_forest = IsolationForest(contamination=0.05, random_state=42)
-    dataframe['anomaly'] = isolation_forest.fit_predict(dataframe[['date_numeric', 'qty']])
-
-    # Map anomaly values to readable labels
-    dataframe['anomaly'] = dataframe['anomaly'].map({1: 'Normal', -1: 'Anomalous'})
-
-    return dataframe
+# ***************************************************************************************
 
 # @Author: Asta Omarsdottir
 # @Email: asta.omarsdottir@gmail.com
-# @Date: 2024-12-10 09:58:52
+# @Date: 2024-12-10
 # @Last Modified by:   undefined
-# @Last Modified time: 2024-12-19 09:58:52
+# @Last Modified time: 2024-12-19
 # @Description: Fetch data for heatmap visualizing dwell time in locations over time
 
-def create_heatmap(data, filter_data, calendar_type, single_date, start_date, end_date):
+def create_heatmap(data, filter_data):
     """
-    Create a heatmap showing dwell time by location and date, filtered by vessel.
+    Create a heatmap showing dwell time by vessel and date, with locations as annotations.
     """
-    # get stored filter data
-    selected_vessels = filter_data.get('vessels', [])
-
-    # manage selected date/daterange
-    selected_date = None
-    if calendar_type == 'single' and single_date:
-        selected_date = single_date[0] if single_date else None
-    elif calendar_type == 'range' and start_date and end_date:
-        selected_date = f"{start_date[0]} to {end_date[0]}" if start_date and end_date else None
-
-    # Filter data based on selected vessels
-    if selected_vessels:
-        data = data[data['vessel_id'].isin(selected_vessels)]
-        
-    # Filter data based on selected date
-    if selected_date:
-       data = data[data['date'] == selected_date]
-       
-    # # # Handle range selection separately if needed   
-    
-    # Aggregate dwell time for heatmap
-    heatmap_data = data.groupby(['date', 'location_id'])['dwell'].sum().reset_index()
-    
     # Create heatmap
     fig = px.density_heatmap(
-        heatmap_data,
+        data,
         x='date',
         y='location_id',
         z='dwell',
-        title='Dwell Time by Location and Date',
+        title='Vessel Dwell Time by location and Date',
         labels={'dwell': 'Dwell Time (s)', 'date': 'Date', 'location_id': 'Location'},
         color_continuous_scale='Viridis'
     )
-    fig.update_layout(xaxis_title="Date", yaxis_title="Location", coloraxis_colorbar_title="Dwell Time (s)")
+    fig.update_layout(xaxis_title="Date", yaxis_title="Location", coloraxis_colorbar_title="Dwell Time (s)",
+    font=dict(size=8, variant="small-caps"),
+    title_font=dict(size=12, variant="small-caps"),
+    legend_font=dict(size=8, variant="small-caps")
+    )
+
     return fig
 
 # @Author: Asta Omarsdottir
 # @Email: asta.omarsdottir@gmail.com
 # @Date: 2024-12-26
-# @Last Modified by:   undefined
-# @Last Modified time: 2024-12-26
+# @Last Modified by:   Asta Omarsdottir
+# @Last Modified time: 2025-01-14
 # @Description: Create treemap
 
+# Create a treemap using Plotly
 def create_treemap(treemap_data):
+    
+    # Remove rows where 'quantity_tons' is zero or missing
+    treemap_data = treemap_data[treemap_data['quantity_tons'] > 0]
+    
+        # Check if the filtered data is empty
+    if treemap_data.empty:
+        return {}  # Return an empty figure if no valid data is available
+    
     fig = px.treemap(
         treemap_data,
-        path=["city_of_arrival", "vessel_company"],
-        values="total_qty_tons",
-        color="total_qty_tons",
+        path=["city_of_arrival", "fish_name"],
+        values="quantity_tons",
+        color="quantity_tons",
         color_continuous_scale="Viridis",
-        title="Treemap of Fish Quantity by Vessel Company and City"
+        title="Fish Deliveries Treemap",
+    )
+    fig.update_layout(
+    font=dict(size=8, variant="small-caps"),
+    title_font=dict(size=12, variant="small-caps"),
+    legend_font=dict(size=8, variant="small-caps")
     )
     return fig
 
+# @Author: Asta Omarsdottir
+# @Email: asta.omarsdottir@gmail.com
+# @Date: 2025-02-26
+# @Last Modified by:   undefined
+# @Last Modified time: 2025-02-26
+# @Description: Create Network-link graph (pyvis)
 
+def create_interactive_graph(fish_delivery_data):
+    G = nx.MultiDiGraph()  # Directed multigraph
+    net = Network(notebook=False, directed = True) # Pyvis interactive network 
+    net.repulsion()
+    
+    net.set_options("""
+    {
+        "layout": {
+            "hierarchical": {
+                "enabled": false
+            }
+        },
+        "physics": {
+            "enabled": true,
+            "solver": "forceAtlas2Based",
+            "stabilization": {
+                "enabled": true,
+                "iterations": 300
+            }
+        },
+        "manipulation": {
+            "enabled": false
+        }
+    }
+    """)
+    
+   # net.toggle_physics(False)
+   
+    for record in fish_delivery_data:
+        # Basic info from the cargo report
+        delivery_id = record.get("delivery_report_name", "Unknown")
+        date_of_arrival = record.get("date_of_arrival", "Unknown")
+        city_of_arrival = record.get("city_of_arrival", "Unknown")
+        fish = record.get("fish_name", "Unknown")
+        qty_tons = float(record.get("quantity_tons", 0.0))  
+        
+        # Get lists (if no list provided, default to empty list)
+        harbor_vessels = record.get("harbor_vessels", [])
+        ping_vessels = record.get("ping_vessels", [])
+
+        # Add primary nodes
+        net.add_node(
+            delivery_id,
+            label=delivery_id, 
+            title= f"Cargo: {delivery_id}\nArrival: {date_of_arrival}\nCity: {city_of_arrival}\nFish Type: {fish}\nFish qty: {qty_tons}",
+            size=30, 
+            color="black"
+            )
+        net.add_node(city_of_arrival, size=30, label=city_of_arrival, color="darkred", title=f"City:{city_of_arrival}")
+        net.add_node(fish, label=fish, size=30, color="green", title=f"Fish Type: {fish}")
+        
+        # Edge between DeliveryReport and City of Arrival
+        net.add_edge(
+            delivery_id, city_of_arrival, 
+            title=f"Delivery: {delivery_id}\nArrival: {date_of_arrival}\nCity: {city_of_arrival}",
+            value=3,  # This controls edge thickness in Pyvis
+            color="orange"
+        )
+        
+        # Edge between DeliveryReport and Commodity (Fish)
+        net.add_edge(
+            delivery_id, fish, 
+            title=f"Delivery: {delivery_id}\nArrival: {date_of_arrival}\nFish: {fish}\nQty: {qty_tons} tons",
+            value=3,  # edge thickness
+            color="gray"
+        )
+        
+        # For each harbor vessel, add a node and an edge from fish to harbor vessel
+        for hv in harbor_vessels:
+            # Ensure hv is a valid string (or int)
+            hv = str(hv) if hv is not None else "Unknown"
+            net.add_node(hv, label=hv, shape = 'star', size=30, color="blue", title=f"Harbor Vessel: {hv}\nExit: {date_of_arrival}\nCity: {city_of_arrival}\nFish: {fish}\nQty: {qty_tons}")
+            net.add_edge(
+                fish, hv,
+                title=f"Delivery: {delivery_id}\nArrival: {date_of_arrival}\nCity: {city_of_arrival}\nQty: {qty_tons} tons\nHarbor: {hv}\nFish: {fish}",
+                value=(qty_tons + 3),
+                color="purple"
+            )
+
+            # For each ping vessel, add a node and an edge from fish to ping vessel
+            for pv in ping_vessels:
+                pv = str(pv) if pv is not None else "Unknown"
+                net.add_node(pv, label=pv, size=30, color="cyan", title=f"Ping Vessel: {pv}\nDate: {date_of_arrival}\nCity: {city_of_arrival}\nFish: {fish}\nQty: {qty_tons}")
+                net.add_edge(
+                    fish, pv,
+                    title=f"Delivery: {delivery_id}\nArrival: {date_of_arrival}\nCity: {city_of_arrival}\nQty: {qty_tons} tons\nPing: {pv}\nFish: {fish}",
+                    value=qty_tons,
+                    color="yellow"
+                )
+
+    # Generate and return the HTML content
+    return net.generate_html()
+
+# def create_interactive_graph(fish_delivery_data):
+#     df = preprocess_data_for_clustering(fish_delivery_data)
+#     df, kmeans = cluster_deliveries(df, k=4)  # Apply clustering
+
+#     cluster_colors = ["red", "blue", "orange", "purple"]  # Define colors for clusters
+
+#     G = nx.MultiDiGraph()  
+#     net = Network(notebook=False, directed=True)  
+
+#     net.set_options("""
+#     var options = {
+#     "layout": {
+#         "hierarchical": {
+#         "enabled": true,
+#         "direction": "LR",
+#         "sortMethod": "hubsize"
+#         }
+#     },
+#     "physics": {
+#         "enabled": false
+#     }
+#     }
+#     """)
+
+#     for idx, record in df.iterrows():
+#         delivery_id = fish_delivery_data[idx].get("delivery_report_name", "Unknown")
+#         city_of_arrival = fish_delivery_data[idx].get("city_of_arrival", "Unknown")
+#         fish = fish_delivery_data[idx].get("fish_name", "Unknown")
+#         qty_tons = float(fish_delivery_data[idx].get("quantity_tons", 0.0))
+#         harbor_vessels = fish_delivery_data[idx].get("harbor_vessels", [])
+#         ping_vessels = fish_delivery_data[idx].get("ping_vessels", [])
+
+#         # Get cluster color
+#         cluster_id = record["cluster"]
+#         cluster_color = cluster_colors[cluster_id]
+
+#         # Add nodes with cluster colors
+#         net.add_node(delivery_id, label=delivery_id, color=cluster_color, title=f"Cluster {cluster_id}")
+#         net.add_node(city_of_arrival, label=city_of_arrival, color="lightgray")
+#         net.add_node(fish, label=fish, color="lightblue")
+
+#         # Edges
+#         net.add_edge(delivery_id, city_of_arrival, color="gray")
+#         net.add_edge(delivery_id, fish, color="purple")
+
+#         for hv in harbor_vessels:
+#             net.add_node(hv, label=hv, color="green")
+#             net.add_edge(fish, hv, color="pink")
+
+#         for pv in ping_vessels:
+#             net.add_node(pv, label=pv, color="lightgreen")
+#             net.add_edge(fish, pv, color="yellow")
+
+#     return net.generate_html()
+
+# @Author: Asta Omarsdottir
+# @Email: asta.omarsdottir@gmail.com
+# @Date: 2025-02-28
+# @Last Modified by:   undefined
+# @Last Modified time: 2025-02-28
+# @Description: handle empty heatmap
+
+def create_empty_heatmap():
+    # Create an empty heatmap figure
+    fig = go.Figure()
+
+    # Add empty heatmap data
+    fig.add_trace(go.Heatmap(
+        z=[],
+        x=[],
+        y=[],
+        colorscale='Viridis'
+    ))
+
+    # Update layout with appropriate titles and labels
+    fig.update_layout(
+        title="Transport Movements Heatmap",
+        xaxis_title="Date",
+        yaxis_title="Location ID",
+        xaxis=dict(type='category', showgrid=True),
+        yaxis=dict(type='category', showgrid=True),
+        annotations=[
+            dict(
+                text='No data to display',
+                xref='paper', yref='paper',
+                showarrow=False,
+                font=dict(size=20)
+            )
+        ]
+    )
+    fig.update_layout(
+    font=dict(size=8, variant="small-caps"),
+    title_font=dict(size=12, variant="small-caps"),
+    legend_font=dict(size=8, variant="small-caps")
+    )
+
+    return fig
+
+def create_empty_treemap():
+    # Create an empty figure with a placeholder layout
+    fig = go.Figure()
+
+    # Set a title and add a message in the center
+    fig.update_layout(
+        title="No Data Available",
+        annotations=[
+            dict(
+                text="No data to display",
+                x=0.5,
+                y=0.5,
+                showarrow=False,
+                font=dict(size=20, color="gray"),
+                xref="paper",
+                yref="paper",
+            )
+        ],
+    )
+
+    return fig  # Return the empty figure
